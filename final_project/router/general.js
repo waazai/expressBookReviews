@@ -25,71 +25,90 @@ public_users.post("/register", (req,res) => {
 });
 
 // Get the book list available in the shop
-public_users.get('/',function (req, res) {
+public_users.get('/', async function (req, res) {
   //Write your code here
   //return res.status(300).json({message: "Yet to be implemented"});
+  //return res.status(200).json(books);
 
-  return res.status(200).json(books);
+  try {
+    const bookList = await Promise.resolve(books);
+
+    return res.status(200).json(bookList);
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch books" });
+  }
 
 });
 
 // Get book details based on ISBN
-public_users.get('/isbn/:isbn',function (req, res) {
+public_users.get('/isbn/:isbn', async function (req, res) {
   //Write your code here
   //return res.status(300).json({message: "Yet to be implemented"});
 
-  const isbn = req.params.isbn;
-  const target = books[isbn];
-
-  
-  if (target){
-    return res.status(200).json(target)
-  } else {
-    return res.status(404).json({ message: "Book not found" });
+  try {
+    const isbn = req.params.isbn;
+    const book = books[isbn];
+    if (!book) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+    const bookData = await Promise.resolve(book);
+    return res.status(200).json(bookData);
+  }catch (error) {
+    return res.status(500).json({ message: "Internal server error" });
   }
 
  });
   
 // Get book details based on author
-public_users.get('/author/:author',function (req, res) {
+public_users.get('/author/:author', async function (req, res) {
   //Write your code here
   //return res.status(300).json({message: "Yet to be implemented"});
 
-  const author = req.params.author.split(" ").join("").toLowerCase();
-  const results = [];
+  try {
+    const inputAuthor = req.params.author.replace(/\s+/g, '').toLowerCase();
+    const results = await Promise.resolve(
+      Object.entries(books)
+        .filter(([isbn, book]) =>
+          book.author.replace(/\s+/g, '').toLowerCase() === inputAuthor
+        )
+        .map(([isbn, book]) => ({ isbn, ...book }))
+    );
 
-  for (let key in books) {
-    if (books[key].author.split(" ").join("").toLowerCase() === author) {
-      results.push({ isbn: key, ...books[key] });
+    if (results.length > 0) {
+      return res.status(200).json(results);
+    } else {
+      return res.status(404).json({ message: "Book not found" });
     }
-  }
-
-  if (results.length > 0) {
-    return res.status(200).json(results);
-  } else {
-    return res.status(404).json({ message:"Book not found" });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" });
   }
 
 });
 
 // Get all books based on title
-public_users.get('/title/:title',function (req, res) {
+public_users.get('/title/:title', async function (req, res) {
   //Write your code here
   //return res.status(300).json({message: "Yet to be implemented"});
 
-  const title = req.params.title.split(" ").join("").toLowerCase();
-  const results = [];
+  try {
+    const inputTitle = req.params.title.replace(/\s+/g, '').toLowerCase();
 
-  for (let key in books) {
-    if (books[key].title.split(" ").join("").toLowerCase() === title) {
-      results.push({ isbn: key, ...books[key] });
+    // 模擬 async 資料查詢
+    const results = await Promise.resolve(
+      Object.entries(books)
+        .filter(([isbn, book]) =>
+          book.title.replace(/\s+/g, '').toLowerCase() === inputTitle
+        )
+        .map(([isbn, book]) => ({ isbn, ...book }))
+    );
+
+    if (results.length > 0) {
+      return res.status(200).json(results);
+    } else {
+      return res.status(404).json({ message: "Book not found" });
     }
-  }
-
-  if (results.length > 0) {
-    return res.status(200).json(results);
-  } else {
-    return res.status(404).json({ message:"Book not found" });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" });
   }
 
 });
